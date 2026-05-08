@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The_GamerZ Browser | Cloud Edition</title>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#ffffff; --text:#1a1a1a; --text-secondary:#666;
+  --accent:#4285f4; --accent-dark:#3367d6;
+  --bar:#f1f3f4; --border:#dadce0; --card:#f8f9fa;
+  --danger:#ea4335; --success:#34a853; --warn:#fbbc04;
+}
+[data-theme="dark"] {
+  --bg:#1a1a2e; --text:#e0e0e0; --text-secondary:#aaa;
+  --accent:#6c63ff; --accent-dark:#5a52d5;
+  --bar:#16213e; --border:#2a2a4a; --card:#0f3460;
+}
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; height:100vh; overflow:hidden; }
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--bar); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+.header { background:var(--bar); padding:8px 14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.logo { font-size:17px; font-weight:800; background:linear-gradient(135deg,var(--accent),var(--success)); -webkit-background-clip:text; background-clip:text; color:transparent; white-space:nowrap; }
+.nav-buttons { display:flex; gap:4px; }
+.nav-btn { background:var(--card); border:1px solid var(--border); color:var(--text); font-size:15px; cursor:pointer; padding:5px 9px; border-radius:6px; transition:.15s; }
+.nav-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+.url-bar-wrap { flex:1; min-width:160px; position:relative; }
+.url-bar { width:100%; padding:7px 36px 7px 12px; border:1px solid var(--border); border-radius:18px; background:var(--bg); color:var(--text); font-size:13px; outline:none; transition:.2s; }
+.url-bar:focus { border-color:var(--accent); box-shadow:0 0 0 2px rgba(66,133,244,.15); }
+.url-go { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--accent); cursor:pointer; font-size:15px; }
+.header-actions { display:flex; gap:6px; }
+.action-btn { padding:6px 13px; border:none; border-radius:16px; background:var(--accent); color:#fff; cursor:pointer; font-size:12px; font-weight:600; transition:.15s; white-space:nowrap; }
+.action-btn:hover { background:var(--accent-dark); transform:translateY(-1px); }
+.action-btn.green { background:var(--success); }
+.action-btn.red { background:var(--danger); }
+.action-btn.grey { background:#888; }
+
+.tabs-bar { background:var(--bar); display:flex; align-items:flex-end; gap:2px; padding:5px 10px 0; border-bottom:1px solid var(--border); overflow-x:auto; }
+.tabs-bar::-webkit-scrollbar { height:0; }
+.tab { background:var(--bg); border:1px solid var(--border); border-bottom:none; border-radius:6px 6px 0 0; padding:5px 12px; display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; white-space:nowrap; max-width:160px; transition:.15s; }
+.tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.tab-title { overflow:hidden; text-overflow:ellipsis; flex:1; }
+.tab-close { background:none; border:none; cursor:pointer; font-size:13px; color:inherit; padding:0 0 0 2px; opacity:.7; }
+.tab-close:hover { opacity:1; }
+.new-tab-btn { background:none; border:none; color:var(--text-secondary); font-size:20px; cursor:pointer; padding:2px 8px; border-radius:4px; }
+.new-tab-btn:hover { background:var(--border); color:var(--text); }
+
+.main-content { height:calc(100vh - 88px); position:relative; overflow:hidden; }
+.tab-pane { display:none; width:100%; height:100%; position:absolute; inset:0; overflow:hidden; }
+.tab-pane.active { display:flex; flex-direction:column; }
+iframe.web-frame { width:100%; flex:1; border:none; background:#fff; }
+
+.homepage { height:100%; display:flex; flex-direction:column; align-items:center; padding:30px 20px; overflow-y:auto; }
+.hp-logo { font-size:38px; font-weight:800; background:linear-gradient(135deg,var(--accent),var(--success)); -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom:6px; text-align:center; }
+.hp-sub { font-size:13px; color:var(--text-secondary); margin-bottom:28px; }
+
+.search-box { width:100%; max-width:520px; background:var(--card); border:1px solid var(--border); border-radius:28px; overflow:hidden; display:flex; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,.08); transition:.2s; }
+.search-box:focus-within { border-color:var(--accent); box-shadow:0 2px 12px rgba(66,133,244,.2); }
+.search-input { flex:1; padding:12px 18px; background:none; border:none; color:var(--text); font-size:14px; outline:none; }
+.search-input::placeholder { color:var(--text-secondary); }
+.search-go { background:var(--accent); border:none; padding:0 20px; color:#fff; font-size:14px; cursor:pointer; transition:.15s; }
+.search-go:hover { background:var(--accent-dark); }
+
+.search-toggle { display:flex; gap:0; margin-bottom:28px; border:1px solid var(--border); border-radius:20px; overflow:hidden; }
+.stoggle-btn { padding:6px 18px; border:none; background:var(--card); color:var(--text-secondary); cursor:pointer; font-size:12px; font-weight:600; transition:.15s; }
+.stoggle-btn.active { background:var(--accent); color:#fff; }
+
+.section-title { font-size:12px; font-weight:700; color:var(--text-secondary); letter-spacing:.8px; text-transform:uppercase; margin-bottom:10px; width:100%; max-width:700px; }
+.bookmarks-row { display:flex; gap:10px; flex-wrap:wrap; max-width:700px; width:100%; margin-bottom:24px; min-height:20px; }
+.bm-chip { display:flex; align-items:center; gap:6px; padding:6px 14px; background:var(--card); border:1px solid var(--border); border-radius:20px; cursor:pointer; font-size:12px; transition:.15s; position:relative; }
+.bm-chip:hover { border-color:var(--accent); background:var(--bg); }
+.bm-chip .bm-del { display:none; position:absolute; top:-5px; right:-5px; background:var(--danger); color:#fff; border:none; border-radius:50%; width:16px; height:16px; font-size:10px; cursor:pointer; align-items:center; justify-content:center; }
+.bm-chip:hover .bm-del { display:flex; }
+.bm-empty { font-size:12px; color:var(--text-secondary); font-style:italic; }
+
+.sites-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:14px; max-width:700px; width:100%; }
+.site-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; text-align:center; cursor:pointer; transition:.2s; }
+.site-card:hover { transform:translateY(-3px); border-color:var(--accent); box-shadow:0 4px 16px rgba(66,133,244,.15); }
+.site-card h3 { font-size:14px; margin-bottom:4px; }
+.site-card p { font-size:11px; color:var(--text-secondary); margin-bottom:2px; }
+.site-card .card-actions { margin-top:10px; display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+.card-btn { padding:3px 10px; border:none; border-radius:10px; font-size:11px; cursor:pointer; }
+.card-btn.open { background:var(--accent); color:#fff; }
+.card-btn.bm { background:var(--warn); color:#fff; }
+.card-btn.del { background:var(--danger); color:#fff; }
+.card-btn.edit { background:#888; color:#fff; }
+.no-sites { grid-column:1/-1; text-align:center; padding:40px; color:var(--text-secondary); font-size:13px; }
+
+.live-dot { display:inline-block; width:8px; height:8px; background:var(--success); border-radius:50%; margin-right:5px; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.builder-panel { position:fixed; inset:0; background:var(--bg); z-index:2000; display:none; flex-direction:column; }
+.builder-panel.open { display:flex; }
+.builder-header { background:var(--bar); padding:9px 14px; display:flex; gap:7px; flex-wrap:wrap; border-bottom:1px solid var(--border); align-items:center; }
+.builder-header input { padding:6px 11px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:13px; outline:none; }
+.builder-header input:focus { border-color:var(--accent); }
+.builder-workspace { display:flex; flex:1; overflow:hidden; }
+.builder-sidebar { width:210px; background:var(--bar); border-right:1px solid var(--border); overflow-y:auto; padding:10px; flex-shrink:0; }
+.sidebar-title { font-size:10px; text-transform:uppercase; color:var(--text-secondary); margin:10px 0 5px; font-weight:700; letter-spacing:.8px; }
+.element-btn { padding:7px 10px; background:var(--bg); border:1px solid var(--border); border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:12px; margin-bottom:4px; width:100%; color:var(--text); transition:.15s; }
+.element-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+.builder-canvas-wrap { flex:1; overflow:auto; padding:20px; background:#e8eaf0; }
+[data-theme="dark"] .builder-canvas-wrap { background:#0d0d1a; }
+#builderCanvas { max-width:860px; margin:0 auto; background:#fff; min-height:500px; border-radius:10px; box-shadow:0 2px 16px rgba(0,0,0,.12); padding:24px; position:relative; }
+.editable-element { border:2px solid transparent; border-radius:4px; cursor:pointer; position:relative; transition:.15s; }
+.editable-element:hover { border-color:var(--accent); }
+.editable-element.selected { border-color:var(--accent); outline:2px solid rgba(66,133,244,.3); }
+.elem-toolbar { display:none; position:absolute; top:-32px; right:0; background:var(--accent); border-radius:4px; gap:2px; padding:3px; z-index:10; }
+.editable-element.selected .elem-toolbar { display:flex; }
+.elem-tb-btn { background:none; border:none; color:#fff; cursor:pointer; font-size:12px; padding:2px 6px; border-radius:3px; }
+.elem-tb-btn:hover { background:rgba(255,255,255,.25); }
+.builder-props { width:210px; background:var(--bar); border-left:1px solid var(--border); overflow-y:auto; padding:10px; flex-shrink:0; }
+.prop-field { margin-bottom:10px; }
+.prop-label { font-size:11px; font-weight:600; margin-bottom:3px; display:block; color:var(--text-secondary); }
+.prop-input { width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--text); font-size:12px; outline:none; }
+.prop-input:focus { border-color:var(--accent); }
+.layout-2col { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.layout-3col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+
+.modal { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:3000; }
+.modal.open { display:flex; }
+.modal-content { background:var(--bg); padding:24px; border-radius:12px; min-width:300px; max-width:400px; width:90%; border:1px solid var(--border); }
+.modal-content h3 { margin-bottom:14px; }
+.modal-input { width:100%; padding:10px 12px; margin:6px 0; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:13px; outline:none; }
+.modal-input:focus { border-color:var(--accent); }
+.modal-row { display:flex; gap:8px; margin-top:12px; }
+.modal-row .action-btn { flex:1; padding:9px; }
+
+.toast { position:fixed; bottom:20px; right:20px; background:var(--accent); color:#fff; padding:10px 18px; border-radius:8px; z-index:5000; font-size:13px; font-weight:500; opacity:0; transform:translateY(6px); transition:.25s; pointer-events:none; max-width:300px; }
+.toast.show { opacity:1; transform:translateY(0); }
+.toast.green { background:var(--success); }
+.toast.red { background:var(--danger); }
+</style>
+</head>
+<body data-theme="light">
+
+<div class="header">
+  <div class="logo">🌐 The_GamerZ Browser</div>
+  <div class="nav-buttons">
+    <button class="nav-btn" id="backBtn">←</button>
+    <button class="nav-btn" id="forwardBtn">→</button>
+    <button class="nav-btn" id="refreshBtn">↻</button>
+    <button class="nav-btn" id="homeBtn">⌂</button>
+  </div>
+  <div class="url-bar-wrap">
+    <input class="url-bar" id="urlBar" placeholder="Search or enter URL..." onkeydown="if(event.key==='Enter')navigateURL(this.value)">
+    <button class="url-go" onclick="navigateURL(document.getElementById('urlBar').value)">▶</button>
+  </div>
+  <div class="header-actions">
+    <button class="action-btn" id="createBtn">+ Create</button>
+    <button class="action-btn grey" id="themeBtn">🌓</button>
+    <button class="action-btn" id="userBtn">👤 Sign In</button>
+  </div>
+</div>
+
+<div class="tabs-bar" id="tabsBar"></div>
+<div class="main-content" id="mainContent"></div>
+
+<!-- BUILDER -->
+<div class="builder-panel" id="builderPanel">
+  <div class="builder-header">
+    <span style="font-weight:700;font-size:14px;">🛠 Website Builder</span>
+    <input type="text" id="siteName" placeholder="Site Name">
+    <input type="text" id="siteId" placeholder="site-url (dots/dashes ok)">
+    <button class="action-btn green" id="previewBtn">👁 Preview</button>
+    <button class="action-btn green" id="publishBtn">💾 Publish</button>
+    <button class="action-btn grey" id="undoBtn">↩ Undo</button>
+    <button class="action-btn grey" id="redoBtn">↪ Redo</button>
+    <button class="action-btn red" id="closeBuilderBtn">✖ Close</button>
+  </div>
+  <div class="builder-workspace">
+    <div class="builder-sidebar">
+      <div class="sidebar-title">📦 Elements</div>
+      <button class="element-btn" data-type="heading">📌 Heading</button>
+      <button class="element-btn" data-type="subheading">📎 Subheading</button>
+      <button class="element-btn" data-type="text">📝 Text Block</button>
+      <button class="element-btn" data-type="button">🔘 Button</button>
+      <button class="element-btn" data-type="image">🖼️ Image</button>
+      <button class="element-btn" data-type="divider">━ Divider</button>
+      <button class="element-btn" data-type="video">📹 YouTube</button>
+      <button class="element-btn" data-type="list">📋 List</button>
+      <button class="element-btn" data-type="quote">💬 Quote</button>
+      <button class="element-btn" data-type="hero">⭐ Hero Section</button>
+      <button class="element-btn" data-type="navbar">🔗 Navbar</button>
+      <button class="element-btn" data-type="footer">📄 Footer</button>
+      <div class="sidebar-title">📐 Layouts</div>
+      <button class="element-btn" data-layout="2col">▯▯ 2 Columns</button>
+      <button class="element-btn" data-layout="3col">▯▯▯ 3 Columns</button>
+      <div class="sidebar-title">🎨 Style Page</div>
+      <div class="prop-field"><label class="prop-label">Page BG Color</label><input type="color" class="prop-input" id="pageBgColor" value="#ffffff"></div>
+      <div class="prop-field"><label class="prop-label">Text Color</label><input type="color" class="prop-input" id="pageTextColor" value="#1a1a1a"></div>
+      <div class="prop-field"><label class="prop-label">Accent Color</label><input type="color" class="prop-input" id="pageAccentColor" value="#4285f4"></div>
+      <button class="element-btn" id="applyPageStyleBtn">✅ Apply Style</button>
+      <div class="sidebar-title">🗑 Canvas</div>
+      <button class="element-btn" id="clearCanvasBtn" style="color:var(--danger);">🗑 Clear All</button>
+    </div>
+    <div class="builder-canvas-wrap">
+      <div id="builderCanvas"><div id="canvasPlaceholder" style="text-align:center;padding:60px;color:#aaa;">✨ Click elements on the left to start building!</div></div>
+    </div>
+    <div class="builder-props" id="propsPanel">
+      <div class="sidebar-title">⚙ Properties</div>
+      <div id="propsContent"><p style="font-size:12px;color:var(--text-secondary);">Click an element to edit its properties.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- Login Modal -->
+<div class="modal" id="loginModal">
+  <div class="modal-content">
+    <h3 id="modalTitle">Sign In</h3>
+    <input class="modal-input" type="text" id="loginUsername" placeholder="Username or Email">
+    <input class="modal-input" type="password" id="loginPass" placeholder="Password">
+    <div id="authError" style="color:var(--danger);font-size:12px;min-height:16px;margin-top:4px;"></div>
+    <div class="modal-row">
+      <button class="action-btn" id="submitAuthBtn">Sign In</button>
+      <button class="action-btn grey" id="toggleAuthBtn">Create Account</button>
+      <button class="action-btn red" onclick="closeModal('loginModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Firebase Config
+const firebaseConfig = {
+  apiKey:"AIzaSyD0Pl0zqyHVP1zfXm2ZLalrmLU1glP6U-0",
+  authDomain:"gamerz-os.firebaseapp.com",
+  projectId:"gamerz-os",
+  storageBucket:"gamerz-os.firebasestorage.app",
+  messagingSenderId:"477372507172",
+  appId:"1:477372507172:web:836936398b86901c1b64b1"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ── STATE ──
+let currentUser = null;
+let currentUsername = '';
+let websites = [];
+let bookmarks = [];
+let tabs = [];
+let activeTabId = null;
+let tabCounter = 0;
+let selectedElement = null;
+let builderHistory = [];
+let builderHistIdx = -1;
+let isSignupMode = false;
+let tabSearchModes = {};
+let sitesUnsubscribe = null;
+
+// ── USERNAME FUNCTIONS ──
+async function saveUsernameToFirestore(userId, username) {
+  await db.collection('usernames').doc(userId).set({ username: username });
+}
+
+async function getUsernameFromFirestore(userId) {
+  const doc = await db.collection('usernames').doc(userId).get();
+  if (doc.exists && doc.data().username) {
+    return doc.data().username;
+  }
+  return null;
+}
+
+async function getUserIdByUsername(username) {
+  const snapshot = await db.collection('usernames').where('username', '==', username).get();
+  if (!snapshot.empty) {
+    return snapshot.docs[0].id;
+  }
+  return null;
+}
+
+// ── HELPERS ──
+function esc(str) {
+  if(!str) return '';
+  return String(str).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+let toastTimer;
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show' + (type ? ' '+type : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>{t.className='toast';}, 2800);
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ── FIRESTORE: REAL-TIME SITES LISTENER ──
+function startSitesListener() {
+  if(sitesUnsubscribe) sitesUnsubscribe();
+  sitesUnsubscribe = db.collection('websites')
+    .orderBy('created', 'desc')
+    .onSnapshot(snapshot => {
+      websites = [];
+      snapshot.forEach(doc => {
+        websites.push({ id: doc.id, ...doc.data() });
+      });
+      refreshAllHomepages();
+    }, err => {
+      console.error('Sites listener error:', err);
+      showToast('Error loading sites.', 'red');
+    });
+}
+
+// ── FIRESTORE: BOOKMARKS ──
+async function loadBookmarks() {
+  if(!currentUser) { bookmarks = []; refreshAllHomepages(); return; }
+  try {
+    const doc = await db.collection('userbookmarks').doc(currentUser.uid).get();
+    bookmarks = (doc.exists && doc.data().list) ? doc.data().list : [];
+  } catch(e) { bookmarks = []; }
+  refreshAllHomepages();
+}
+async function saveBookmarks() {
+  if(!currentUser) return;
+  try { await db.collection('userbookmarks').doc(currentUser.uid).set({ list: bookmarks }); }
+  catch(e) { showToast('Could not save bookmark: ' + e.message, 'red'); }
+}
+
+// ── SITE WRITE ──
+async function writeSite(id, name, html) {
+  await db.collection('websites').doc(id).set({
+    name: name,
+    html: html,
+    author: currentUsername || (currentUser ? currentUser.email : 'anonymous'),
+    authorId: currentUser ? currentUser.uid : null,
+    created: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+async function deleteSiteDoc(id) {
+  await db.collection('websites').doc(id).delete();
+}
+
+// ── WAIT FOR SITE TO APPEAR AFTER PUBLISHING ──
+function waitForSiteAndLoad(siteId, attempts = 0) {
+  const site = websites.find(s => s.id === siteId);
+  if (site) {
+    loadSiteInTab(siteId);
+  } else if (attempts < 20) {
+    setTimeout(() => {
+      waitForSiteAndLoad(siteId, attempts + 1);
+    }, 500);
+  } else {
+    showToast('Site published but failed to load. Refresh the page.', 'red');
+  }
+}
+
+// ── HOMEPAGE REFRESH ──
+function refreshAllHomepages() {
+  tabs.forEach(tab => {
+    if(tab.content === 'homepage') {
+      const pane = document.getElementById('pane-'+tab.id);
+      if(pane) { pane.innerHTML = buildHomepage(tab.id); attachHomepageEvents(tab.id); }
+    }
+  });
+}
+
+// ── TABS ──
+function createTab(title='Home', url='', content='homepage') {
+  const id = ++tabCounter;
+  tabs.push({ id, title, url, content });
+  renderTabs(); setActiveTab(id);
+  return id;
+}
+function setActiveTab(id) { activeTabId = id; renderTabs(); renderTabContent(); }
+function closeTab(id) {
+  if(tabs.length === 1) createTab();
+  const idx = tabs.findIndex(t=>t.id===id);
+  tabs = tabs.filter(t=>t.id!==id);
+  const pane = document.getElementById('pane-'+id);
+  if(pane) pane.remove();
+  if(activeTabId === id) setActiveTab(tabs[Math.min(idx,tabs.length-1)].id);
+  else renderTabs();
+}
+function renderTabs() {
+  const bar = document.getElementById('tabsBar');
+  bar.innerHTML = '';
+  tabs.forEach(tab => {
+    const div = document.createElement('div');
+    div.className = 'tab' + (tab.id===activeTabId?' active':'');
+    div.innerHTML = `<span class="tab-title">${esc(tab.title)}</span><button class="tab-close">×</button>`;
+    div.addEventListener('click', e=>{ if(!e.target.classList.contains('tab-close')) setActiveTab(tab.id); });
+    div.querySelector('.tab-close').addEventListener('click', e=>{ e.stopPropagation(); closeTab(tab.id); });
+    bar.appendChild(div);
+  });
+  const nb = document.createElement('button');
+  nb.className = 'new-tab-btn'; nb.textContent = '+'; nb.onclick = ()=>createTab();
+  bar.appendChild(nb);
+}
+function renderTabContent() {
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  const tab = tabs.find(t=>t.id===activeTabId);
+  if(!tab) return;
+  let pane = document.getElementById('pane-'+tab.id);
+  if(!pane) {
+    pane = document.createElement('div');
+    pane.className = 'tab-pane'; pane.id = 'pane-'+tab.id;
+    document.getElementById('mainContent').appendChild(pane);
+    if(tab.content === 'homepage') pane.innerHTML = buildHomepage(tab.id);
+    else if(tab.content === 'frame') {
+      pane.innerHTML = `<iframe class="web-frame" id="frame-${tab.id}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"></iframe>`;
+      setTimeout(()=>{ const fr=document.getElementById('frame-'+tab.id); if(fr){ if(tab.frameContent) fr.srcdoc=tab.frameContent; else if(tab.url) fr.src=tab.url; } },10);
+    }
+  }
+  pane.classList.add('active');
+  document.getElementById('urlBar').value = tab.url || '';
+  if(tab.content === 'homepage') attachHomepageEvents(tab.id);
+}
+function getActiveTab() { return tabs.find(t=>t.id===activeTabId); }
+
+// ── HOMEPAGE ──
+function buildHomepage(tabId) {
+  const bmHtml = bookmarks.length
+    ? bookmarks.map((bm,i)=>`<div class="bm-chip" data-bmid="${i}"><span>🔖</span><span>${esc(bm.name)}</span><button class="bm-del" data-delbm="${i}">×</button></div>`).join('')
+    : '<span class="bm-empty">No bookmarks yet — star a site to save it here</span>';
+
+  const sitesHtml = websites.length
+    ? websites.map(site=>`
+      <div class="site-card">
+        <h3>${esc(site.name)}</h3>
+        <p>/${esc(site.id)}</p>
+        <small style="color:var(--text-secondary)">by ${esc(site.author||'anonymous')}</small>
+        <div class="card-actions">
+          <button class="card-btn open" data-open="${esc(site.id)}">Open</button>
+          <button class="card-btn bm" data-bm="${esc(site.id)}" data-bmname="${esc(site.name)}">★</button>
+          ${currentUser && currentUser.uid===site.authorId
+            ? `<button class="card-btn edit" data-edit="${esc(site.id)}">✏️</button><button class="card-btn del" data-del="${esc(site.id)}">🗑</button>`
+            : ''}
+        </div>
+      </div>`).join('')
+    : '<div class="no-sites">🌐 No published sites yet.<br>Click <strong>+ Create</strong> to be the first!</div>';
+
+  return `<div class="homepage" id="hp-${tabId}">
+    <div class="hp-logo">The_GamerZ Browser</div>
+    <div class="hp-sub"><span class="live-dot"></span>Live — sites update in real time for everyone</div>
+    <div class="search-box">
+      <input class="search-input" id="hp-search-${tabId}" placeholder="Search..." onkeydown="if(event.key==='Enter')doSearch(${tabId})">
+      <button class="search-go" onclick="doSearch(${tabId})">🔍</button>
+    </div>
+    <div class="search-toggle">
+      <button class="stoggle-btn active" id="stog-local-${tabId}" onclick="setSearchMode(${tabId},'local')">📂 My Sites</button>
+      <button class="stoggle-btn" id="stog-web-${tabId}" onclick="setSearchMode(${tabId},'web')">🌍 Bing Search</button>
+    </div>
+    <div class="section-title">⭐ Bookmarks</div>
+    <div class="bookmarks-row" id="bm-row-${tabId}">${bmHtml}</div>
+    <div class="section-title">🌐 Published Sites (${websites.length})</div>
+    <div class="sites-grid" id="sites-grid-${tabId}">${sitesHtml}</div>
+    <div style="margin-top:24px;"><button class="action-btn" onclick="openBuilder()">✨ Create New Website</button></div>
+  </div>`;
+}
+
+function attachHomepageEvents(tabId) {
+  const hp = document.getElementById('hp-'+tabId);
+  if(!hp) return;
+  hp.querySelectorAll('[data-open]').forEach(btn=>btn.onclick=()=>loadSiteInTab(btn.dataset.open));
+  hp.querySelectorAll('[data-bm]').forEach(btn=>btn.onclick=()=>addBookmark(btn.dataset.bm, btn.dataset.bmname));
+  hp.querySelectorAll('[data-edit]').forEach(btn=>btn.onclick=()=>editSite(btn.dataset.edit));
+  hp.querySelectorAll('[data-del]').forEach(btn=>btn.onclick=()=>deleteSite(btn.dataset.del));
+  hp.querySelectorAll('.bm-chip[data-bmid]').forEach(chip=>chip.onclick=e=>{
+    if(!e.target.classList.contains('bm-del')){const bm=bookmarks[+chip.dataset.bmid];if(bm)loadSiteInTab(bm.siteId);}
+  });
+  hp.querySelectorAll('[data-delbm]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();removeBookmark(+btn.dataset.delbm,tabId);});
+}
+
+// ── SEARCH ──
+function setSearchMode(tabId, mode) {
+  tabSearchModes[tabId] = mode;
+  const l=document.getElementById('stog-local-'+tabId), w=document.getElementById('stog-web-'+tabId);
+  if(l) l.classList.toggle('active',mode==='local');
+  if(w) w.classList.toggle('active',mode==='web');
+}
+function doSearch(tabId) {
+  const input = document.getElementById('hp-search-'+tabId);
+  if(!input) return;
+  const query = input.value.trim();
+  if(!query) return;
+  const mode = tabSearchModes[tabId]||'local';
+  if(mode === 'web') {
+    const newId = createTab('🔍 '+query,'https://www.bing.com/search?q='+encodeURIComponent(query),'frame');
+    const tab = tabs.find(t=>t.id===newId);
+    if(tab) tab.url = 'https://www.bing.com/search?q='+encodeURIComponent(query);
+  } else {
+    const q = query.toLowerCase();
+    const results = websites.filter(s=>s.name.toLowerCase().includes(q)||s.id.toLowerCase().includes(q));
+    const grid = document.getElementById('sites-grid-'+tabId);
+    if(!grid) return;
+    if(!results.length) {
+      grid.innerHTML = `<div class="no-sites">🔍 No sites found for "<strong>${esc(query)}</strong>"</div>`;
+    } else {
+      grid.innerHTML = results.map(site=>`
+        <div class="site-card">
+          <h3>${esc(site.name)}</h3><p>/${esc(site.id)}</p>
+          <div class="card-actions">
+            <button class="card-btn open" data-open="${esc(site.id)}">Open</button>
+            <button class="card-btn bm" data-bm="${esc(site.id)}" data-bmname="${esc(site.name)}">★</button>
+          </div>
+        </div>`).join('');
+      grid.querySelectorAll('[data-open]').forEach(btn=>btn.onclick=()=>loadSiteInTab(btn.dataset.open));
+      grid.querySelectorAll('[data-bm]').forEach(btn=>btn.onclick=()=>addBookmark(btn.dataset.bm,btn.dataset.bmname));
+    }
+    showToast(`Found ${results.length} site(s) for "${query}"`);
+  }
+}
+
+// ── SITE ACTIONS ──
+function loadSiteInTab(siteId) {
+  const site = websites.find(s=>s.id===siteId);
+  if(!site) { showToast('Site not found','red'); return; }
+  const cur = getActiveTab();
+  if(cur && cur.content==='homepage') {
+    cur.content='frame'; cur.title=site.name; cur.url='/'+siteId; cur.frameContent=site.html;
+    const pane = document.getElementById('pane-'+cur.id);
+    if(pane) {
+      pane.innerHTML = `<iframe class="web-frame" id="frame-${cur.id}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"></iframe>`;
+      setTimeout(()=>{const fr=document.getElementById('frame-'+cur.id);if(fr)fr.srcdoc=site.html;},10);
+    }
+    document.getElementById('urlBar').value='/'+siteId;
+    renderTabs();
+  } else {
+    const tabId = createTab(site.name,'/'+siteId,'frame');
+    const tab = tabs.find(t=>t.id===tabId);
+    if(tab) tab.frameContent = site.html;
+    renderTabContent();
+  }
+}
+
+async function deleteSite(siteId) {
+  if(!confirm('Delete this site? This cannot be undone.')) return;
+  if(!currentUser) { showToast('Sign in to delete','red'); return; }
+  const site = websites.find(s=>s.id===siteId);
+  if(site && site.authorId !== currentUser.uid) { showToast('You can only delete your own sites','red'); return; }
+  try {
+    await deleteSiteDoc(siteId);
+    bookmarks = bookmarks.filter(b=>b.siteId!==siteId);
+    await saveBookmarks();
+    showToast('Site deleted','red');
+  } catch(e) { showToast('Error deleting: '+e.message,'red'); }
+}
+
+async function addBookmark(siteId, name) {
+  if(!currentUser) { showToast('Sign in to bookmark','red'); openModal('loginModal'); return; }
+  if(bookmarks.some(b=>b.siteId===siteId)) { showToast('Already bookmarked!'); return; }
+  bookmarks.push({ siteId, name });
+  await saveBookmarks();
+  refreshAllHomepages();
+  showToast('Bookmarked: '+name,'green');
+}
+async function removeBookmark(idx, tabId) {
+  bookmarks.splice(idx,1);
+  await saveBookmarks();
+  const pane = document.getElementById('pane-'+tabId);
+  if(pane){ pane.innerHTML=buildHomepage(tabId); attachHomepageEvents(tabId); }
+  showToast('Bookmark removed');
+}
+
+// ── NAVIGATION ──
+function navigateURL(val) {
+  val = val.trim(); if(!val) return;
+  const tab = getActiveTab(); if(!tab) return;
+  if(val.startsWith('/')) {
+    const siteId = val.slice(1);
+    if(websites.find(s=>s.id===siteId)){ loadSiteInTab(siteId); return; }
+  }
+  let url = val;
+  if(!url.includes('.')||url.includes(' ')) url='https://www.bing.com/search?q='+encodeURIComponent(val);
+  else if(!url.startsWith('http')) url='https://'+url;
+  tab.content='frame'; tab.url=url;
+  try { tab.title=new URL(url).hostname; } catch(e){ tab.title=url; }
+  const pane = document.getElementById('pane-'+tab.id);
+  if(pane) pane.innerHTML=`<iframe class="web-frame" id="frame-${tab.id}" src="${url}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"></iframe>`;
+  document.getElementById('urlBar').value=url;
+  renderTabs();
+}
+function goBack(){ try{const fr=document.querySelector('.tab-pane.active iframe');if(fr)fr.contentWindow.history.back();}catch(e){} }
+function goForward(){ try{const fr=document.querySelector('.tab-pane.active iframe');if(fr)fr.contentWindow.history.forward();}catch(e){} }
+function refreshPage(){
+  const tab=getActiveTab(); if(!tab) return;
+  if(tab.content==='homepage'){ const pane=document.getElementById('pane-'+tab.id); if(pane){pane.innerHTML=buildHomepage(tab.id);attachHomepageEvents(tab.id);} return; }
+  try{const fr=document.querySelector('.tab-pane.active iframe');if(fr)fr.contentWindow.location.reload();}catch(e){}
+}
+function goHome(){
+  const tab=getActiveTab(); if(!tab) return;
+  tab.content='homepage'; tab.url=''; tab.title='Home';
+  const pane=document.getElementById('pane-'+tab.id);
+  if(pane){pane.innerHTML=buildHomepage(tab.id);attachHomepageEvents(tab.id);}
+  document.getElementById('urlBar').value=''; renderTabs();
+}
+
+// ── BUILDER ──
+// FIXED: openBuilder - completely resets canvas and history
+function openBuilder() {
+  document.getElementById('builderPanel').classList.add('open');
+  document.getElementById('builderPanel').dataset.editingId='';
+  
+  // COMPLETELY WIPE the canvas - no remnants
+  const canvas = document.getElementById('builderCanvas');
+  canvas.innerHTML = '<div id="canvasPlaceholder" style="text-align:center;padding:60px;color:#aaa;">✨ Click elements on the left to start building!</div>';
+  
+  document.getElementById('siteName').value=''; 
+  document.getElementById('siteId').value='';
+  document.getElementById('pageBgColor').value='#ffffff'; 
+  document.getElementById('pageTextColor').value='#1a1a1a'; 
+  document.getElementById('pageAccentColor').value='#4285f4';
+  document.getElementById('builderCanvas').style.cssText='background:#fff;color:#1a1a1a;';
+  
+  // Reset history completely
+  builderHistory = []; 
+  builderHistIdx = -1; 
+  saveBuilderHistory();
+  
+  selectedElement = null; 
+  updatePropsPanel(null);
+}
+function closeBuilderPanel(){ document.getElementById('builderPanel').classList.remove('open'); }
+
+// FIXED: editSite - completely clears canvas and loads fresh WITHOUT duplication
+function editSite(siteId) {
+  const site = websites.find(s=>s.id===siteId);
+  if(!site){ showToast('Site not found','red'); return; }
+  
+  const panel=document.getElementById('builderPanel');
+  panel.classList.add('open'); 
+  panel.dataset.editingId=siteId;
+  document.getElementById('siteName').value=site.name;
+  document.getElementById('siteId').value=site.id;
+  
+  // COMPLETELY WIPE the canvas - remove everything
+  const canvas=document.getElementById('builderCanvas');
+  canvas.innerHTML = '';
+  
+  // Parse the saved HTML
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(site.html, 'text/html');
+  const children = Array.from(doc.body.children);
+  
+  if(!children.length){
+    canvas.innerHTML='<div id="canvasPlaceholder" style="text-align:center;padding:60px;color:#aaa;">✨ Empty site. Add elements!</div>';
+  } else {
+    // Add each element WITHOUT the toolbar wrapper (they will get events attached)
+    children.forEach(child => {
+      // Clone the element so we don't modify the original
+      const cloneElem = child.cloneNode(true);
+      cloneElem.classList.add('editable-element');
+      cloneElem.setAttribute('data-type', 'raw');
+      cloneElem.style.cssText = 'padding:10px;margin:6px 0;position:relative;';
+      
+      // Add the toolbar
+      const tb = document.createElement('div');
+      tb.className = 'elem-toolbar';
+      tb.innerHTML = `<button class="elem-tb-btn" onclick="moveElem(this,'up')">↑</button><button class="elem-tb-btn" onclick="moveElem(this,'down')">↓</button><button class="elem-tb-btn" onclick="dupElem(this)">⧉</button><button class="elem-tb-btn" onclick="delElem(this)">✕</button>`;
+      cloneElem.insertBefore(tb, cloneElem.firstChild);
+      
+      canvas.appendChild(cloneElem);
+      attachElemEvents(cloneElem);
+    });
+  }
+  
+  // Reset history to avoid old state
+  builderHistory = []; 
+  builderHistIdx = -1; 
+  saveBuilderHistory();
+  selectedElement = null; 
+  updatePropsPanel(null);
+  showToast('Loaded "' + site.name + '" for editing', 'green');
+}
+
+function saveBuilderHistory(){
+  const c=document.getElementById('builderCanvas');
+  // Trim history to avoid memory bloat
+  builderHistory = builderHistory.slice(0, builderHistIdx + 1);
+  builderHistory.push(c.innerHTML); 
+  builderHistIdx++;
+  if(builderHistory.length>60){
+    builderHistory.shift();
+    builderHistIdx--;
+  }
+}
+function undoBuilder(){ if(builderHistIdx>0){builderHistIdx--;document.getElementById('builderCanvas').innerHTML=builderHistory[builderHistIdx];attachAllElemEvents();showToast('Undo');} }
+function redoBuilder(){ if(builderHistIdx<builderHistory.length-1){builderHistIdx++;document.getElementById('builderCanvas').innerHTML=builderHistory[builderHistIdx];attachAllElemEvents();showToast('Redo');} }
+function removePlaceholder(){ const ph=document.getElementById('canvasPlaceholder'); if(ph) ph.remove(); }
+
+function addElement(type) {
+  removePlaceholder();
+  const canvas=document.getElementById('builderCanvas');
+  const el=document.createElement('div');
+  el.className='editable-element'; 
+  el.dataset.type=type;
+  el.style.cssText='padding:10px;margin:6px 0;position:relative;';
+  const tb=`<div class="elem-toolbar"><button class="elem-tb-btn" onclick="moveElem(this,'up')">↑</button><button class="elem-tb-btn" onclick="moveElem(this,'down')">↓</button><button class="elem-tb-btn" onclick="dupElem(this)">⧉</button><button class="elem-tb-btn" onclick="delElem(this)">✕</button></div>`;
+  switch(type){
+    case 'heading':    el.innerHTML=tb+'<h2 style="font-size:28px;font-weight:800;margin:0;">New Heading</h2>'; break;
+    case 'subheading': el.innerHTML=tb+'<h3 style="font-size:20px;font-weight:600;margin:0;">Subheading Here</h3>'; break;
+    case 'text':       el.innerHTML=tb+'<p style="font-size:15px;line-height:1.7;margin:0;">Edit this text. Double-click to change content.</p>'; break;
+    case 'button':     el.innerHTML=tb+'<button style="padding:10px 24px;background:#4285f4;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;">Click Me</button>'; break;
+    case 'image':      el.innerHTML=tb+'<img src="https://placehold.co/640x300/4285f4/white?text=Your+Image" style="max-width:100%;border-radius:8px;display:block;"><small style="color:#888;font-size:11px;">Double-click image to change URL</small>'; break;
+    case 'divider':    el.innerHTML=tb+'<hr style="border:none;border-top:2px solid #e0e0e0;margin:8px 0;">'; break;
+    case 'video':      el.innerHTML=tb+'<iframe width="100%" height="260" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen style="border-radius:8px;display:block;"></iframe><small style="color:#888;font-size:11px;">Double-click to change YouTube URL</small>'; break;
+    case 'list':       el.innerHTML=tb+'<ul style="padding-left:20px;line-height:2;"><li>Item 1 — double-click to edit</li><li>Item 2</li><li>Item 3</li></ul>'; break;
+    case 'quote':      el.innerHTML=tb+'<blockquote style="border-left:4px solid #4285f4;padding-left:16px;font-style:italic;color:#555;">"The only limit is your imagination."<br><small>— Anonymous</small></blockquote>'; break;
+    case 'hero':       el.innerHTML=tb+'<div style="text-align:center;padding:60px 20px;background:linear-gradient(135deg,#4285f4,#34a853);border-radius:10px;color:#fff;"><h1 style="font-size:42px;font-weight:900;margin:0 0 14px;">HERO TITLE</h1><p style="font-size:18px;margin:0 0 24px;opacity:.9;">A catchy subtitle goes here</p><button style="background:#fff;color:#4285f4;border:none;padding:12px 32px;font-size:15px;font-weight:700;border-radius:8px;cursor:pointer;">Get Started</button></div>'; break;
+    case 'navbar':     el.innerHTML=tb+'<nav style="background:#4285f4;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-radius:8px;"><span style="color:#fff;font-size:18px;font-weight:800;">MY SITE</span><div><a href="#" style="color:#fff;text-decoration:none;margin-left:18px;font-weight:600;">Home</a><a href="#" style="color:#fff;text-decoration:none;margin-left:18px;font-weight:600;">About</a><a href="#" style="color:#fff;text-decoration:none;margin-left:18px;font-weight:600;">Contact</a></div></nav>'; break;
+    case 'footer':     el.innerHTML=tb+'<footer style="text-align:center;padding:24px;background:#f5f5f5;border-radius:8px;color:#888;font-size:13px;border-top:2px solid #e0e0e0;">© 2025 My Website · Built with The_GamerZ Browser</footer>'; break;
+    default:           el.innerHTML=tb+`<div>[${type}]</div>`;
+  }
+  canvas.appendChild(el); 
+  attachElemEvents(el); 
+  saveBuilderHistory(); 
+  showToast('Added: '+type,'green');
+}
+
+function addLayout(layout) {
+  removePlaceholder();
+  const canvas=document.getElementById('builderCanvas');
+  const el=document.createElement('div');
+  el.className='editable-element'; 
+  el.dataset.type='layout';
+  el.style.cssText='padding:10px;margin:6px 0;position:relative;';
+  const cls=layout==='2col'?'layout-2col':'layout-3col';
+  const cols=layout==='2col'?2:3;
+  const colHtml=Array.from({length:cols},(_,i)=>`<div style="background:#f8f9fa;border:2px dashed #ddd;padding:20px;min-height:80px;border-radius:6px;text-align:center;color:#aaa;">Column ${i+1}</div>`).join('');
+  const tb=`<div class="elem-toolbar"><button class="elem-tb-btn" onclick="moveElem(this,'up')">↑</button><button class="elem-tb-btn" onclick="moveElem(this,'down')">↓</button><button class="elem-tb-btn" onclick="delElem(this)">✕</button></div>`;
+  el.innerHTML=tb+`<div class="${cls}">${colHtml}</div>`;
+  canvas.appendChild(el); 
+  attachElemEvents(el); 
+  saveBuilderHistory(); 
+  showToast('Added '+layout+' layout','green');
+}
+
+function attachElemEvents(el) {
+  el.addEventListener('click', e=>{
+    if(e.target.classList.contains('elem-tb-btn')) return;
+    document.querySelectorAll('.editable-element').forEach(x=>x.classList.remove('selected'));
+    el.classList.add('selected'); 
+    selectedElement=el; 
+    updatePropsPanel(el);
+  });
+  el.addEventListener('dblclick', e=>{
+    const type=el.dataset.type;
+    if(['heading','subheading','text','list','quote','raw'].includes(type)){
+      const target=el.querySelector('h1,h2,h3,p,ul,blockquote');
+      if(target){target.contentEditable='true';target.focus();}
+    } else if(type==='image'){
+      const img=el.querySelector('img'); 
+      if(img){const url=prompt('Enter image URL:',img.src);if(url){img.src=url;saveBuilderHistory();}}
+    } else if(type==='video'){
+      const fr=el.querySelector('iframe'); 
+      if(fr){const url=prompt('Enter YouTube URL:','');if(url){const id=url.match(/(?:v=|youtu\.be\/|embed\/)([^&?/]+)/)?.[1];if(id){fr.src=`https://www.youtube.com/embed/${id}`;saveBuilderHistory();}else showToast('Invalid YouTube URL','red');}}
+    } else if(type==='button'){
+      const btn=el.querySelector('button'); 
+      if(btn){const t=prompt('Button text:',btn.textContent);if(t){btn.textContent=t;saveBuilderHistory();}}
+    }
+  });
+  el.querySelectorAll('[contenteditable]').forEach(ce=>ce.addEventListener('blur',()=>{ce.contentEditable='false';saveBuilderHistory();}));
+}
+function attachAllElemEvents(){ document.querySelectorAll('.editable-element').forEach(el=>attachElemEvents(el)); }
+function moveElem(btn,dir){ const el=btn.closest('.editable-element'); if(dir==='up'&&el.previousElementSibling) el.parentNode.insertBefore(el,el.previousElementSibling); else if(dir==='down'&&el.nextElementSibling) el.parentNode.insertBefore(el.nextElementSibling,el); saveBuilderHistory(); }
+function dupElem(btn){ const el=btn.closest('.editable-element'); const clone=el.cloneNode(true); el.parentNode.insertBefore(clone,el.nextSibling); attachElemEvents(clone); saveBuilderHistory(); showToast('Element duplicated'); }
+function delElem(btn){ const el=btn.closest('.editable-element'); el.remove(); selectedElement=null; updatePropsPanel(null); saveBuilderHistory(); showToast('Element deleted'); }
+
+function updatePropsPanel(el) {
+  const panel=document.getElementById('propsContent');
+  if(!el){panel.innerHTML='<p style="font-size:12px;color:var(--text-secondary);">Click an element to edit its properties.</p>';return;}
+  const pdVal=parseInt(el.style.padding)||10; const align=el.style.textAlign||'left';
+  panel.innerHTML=`
+    <div class="prop-field"><label class="prop-label">Background</label><input type="color" class="prop-input" id="ep-bg" value="${el.style.backgroundColor||'#ffffff'}"></div>
+    <div class="prop-field"><label class="prop-label">Padding (px)</label><input type="number" class="prop-input" id="ep-pad" value="${pdVal}" min="0" max="100"></div>
+    <div class="prop-field"><label class="prop-label">Border Radius (px)</label><input type="number" class="prop-input" id="ep-br" value="${parseInt(el.style.borderRadius)||0}" min="0"></div>
+    <div class="prop-field"><label class="prop-label">Text Align</label><select class="prop-input" id="ep-align"><option ${align==='left'?'selected':''}>left</option><option ${align==='center'?'selected':''}>center</option><option ${align==='right'?'selected':''}>right</option></select></div>
+    <div class="prop-field"><label class="prop-label">Width (%)</label><input type="number" class="prop-input" id="ep-w" value="${parseInt(el.style.width)||100}" min="10" max="100"></div>
+    <button class="action-btn red" id="ep-del" style="width:100%;margin-top:8px;">🗑 Delete Element</button>`;
+  document.getElementById('ep-bg').oninput=e=>{el.style.backgroundColor=e.target.value;};
+  document.getElementById('ep-bg').onchange=()=>saveBuilderHistory();
+  document.getElementById('ep-pad').onchange=e=>{el.style.padding=e.target.value+'px';saveBuilderHistory();};
+  document.getElementById('ep-br').onchange=e=>{el.style.borderRadius=e.target.value+'px';saveBuilderHistory();};
+  document.getElementById('ep-align').onchange=e=>{el.style.textAlign=e.target.value;saveBuilderHistory();};
+  document.getElementById('ep-w').onchange=e=>{el.style.width=e.target.value+'%';saveBuilderHistory();};
+  document.getElementById('ep-del').onclick=()=>{el.remove();selectedElement=null;updatePropsPanel(null);saveBuilderHistory();showToast('Deleted');};
+}
+
+function applyPageStyle() {
+  const canvas=document.getElementById('builderCanvas');
+  canvas.style.backgroundColor=document.getElementById('pageBgColor').value;
+  canvas.style.color=document.getElementById('pageTextColor').value;
+  saveBuilderHistory(); showToast('Page style applied','green');
+}
+
+function getBuilderHTML() {
+  const canvas=document.getElementById('builderCanvas');
+  const bg=document.getElementById('pageBgColor').value;
+  const tc=document.getElementById('pageTextColor').value;
+  const name=document.getElementById('siteName').value||'My Site';
+  const cleanedElems=Array.from(canvas.querySelectorAll('.editable-element')).map(el=>{
+    const clone=el.cloneNode(true);
+    clone.classList.remove('selected');
+    clone.querySelectorAll('.elem-toolbar').forEach(t=>t.remove());
+    clone.style.border='none'; 
+    clone.style.outline='none';
+    return clone.outerHTML;
+  }).join('\n');
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(name)}</title><style>*{box-sizing:border-box;margin:0;padding:0;}body{background:${bg};color:${tc};font-family:-apple-system,sans-serif;padding:20px;max-width:900px;margin:0 auto;}.layout-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}.layout-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}</style></head><body>${cleanedElems}</body></html>`;
+}
+
+function previewSite(){ const html=getBuilderHTML(); const w=window.open('','_blank'); w.document.write(html); w.document.close(); }
+
+// FIXED: publishSite - properly saves without duplication
+async function publishSite() {
+  if(!currentUser){ showToast('Sign in to publish!','red'); openModal('loginModal'); return; }
+  const name=document.getElementById('siteName').value.trim();
+  let id=document.getElementById('siteId').value.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-_.]/g,'');
+  if(!name||!id){ showToast('Enter site name and URL!','red'); return; }
+  const html=getBuilderHTML();
+  const editingId=document.getElementById('builderPanel').dataset.editingId;
+
+  if(editingId) {
+    try {
+      if(editingId!==id) {
+        if(websites.some(s=>s.id===id&&s.id!==editingId)){ showToast('URL already taken!','red'); return; }
+        await deleteSiteDoc(editingId);
+      }
+      await writeSite(id, name, html);
+      document.getElementById('builderPanel').dataset.editingId='';
+      closeBuilderPanel();
+      showToast(`Saved changes to "${name}"`, 'green');
+      waitForSiteAndLoad(id);
+    } catch(e){ showToast('Error saving: '+e.message,'red'); }
+    return;
+  }
+
+  if(websites.some(s=>s.id===id)){ showToast('URL already taken! Try another.','red'); return; }
+  try {
+    await writeSite(id, name, html);
+    closeBuilderPanel();
+    showToast(`Published "${name}" at /${id}`,'green');
+    waitForSiteAndLoad(id);
+  } catch(e){ showToast('Error publishing: '+e.message,'red'); }
+}
+
+// ── AUTH WITH USERNAME ──
+function openLoginModal(){ isSignupMode=false; document.getElementById('modalTitle').textContent='Sign In'; document.getElementById('submitAuthBtn').textContent='Sign In'; document.getElementById('toggleAuthBtn').textContent='Create Account'; document.getElementById('authError').textContent=''; document.getElementById('loginUsername').value=''; document.getElementById('loginPass').value=''; openModal('loginModal'); }
+function toggleAuthMode(){ isSignupMode=!isSignupMode; document.getElementById('modalTitle').textContent=isSignupMode?'Create Account':'Sign In'; document.getElementById('submitAuthBtn').textContent=isSignupMode?'Sign Up':'Sign In'; document.getElementById('toggleAuthBtn').textContent=isSignupMode?'Back to Sign In':'Create Account'; document.getElementById('authError').textContent=''; }
+
+async function handleAuth() {
+  const usernameOrEmail = document.getElementById('loginUsername').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('authError');
+  
+  if(!usernameOrEmail || !pass){ errEl.textContent='Fill in all fields.'; return; }
+  
+  const isEmail = usernameOrEmail.includes('@');
+  
+  if(isSignupMode) {
+    let email = usernameOrEmail;
+    let username = '';
+    
+    if(!isEmail) {
+      username = usernameOrEmail;
+      email = usernameOrEmail + '@gamerzos.com';
+    } else {
+      email = usernameOrEmail;
+      username = usernameOrEmail.split('@')[0];
+    }
+    
+    auth.createUserWithEmailAndPassword(email, pass)
+      .then(async cred => {
+        currentUser = cred.user;
+        currentUsername = username;
+        await saveUsernameToFirestore(currentUser.uid, username);
+        closeModal('loginModal');
+        showToast('Account created! Welcome ' + username + '!', 'green');
+        updateUserBtn();
+        await loadBookmarks();
+      }).catch(e => { errEl.textContent = e.message; });
+  } else {
+    let email = usernameOrEmail;
+    
+    if(!isEmail) {
+      const userId = await getUserIdByUsername(usernameOrEmail);
+      if(userId) {
+        email = usernameOrEmail + '@gamerzos.com';
+      } else {
+        email = usernameOrEmail + '@gamerzos.com';
+      }
+    }
+    
+    auth.signInWithEmailAndPassword(email, pass)
+      .then(async cred => {
+        currentUser = cred.user;
+        const savedUsername = await getUsernameFromFirestore(currentUser.uid);
+        currentUsername = savedUsername || currentUser.email.split('@')[0];
+        closeModal('loginModal');
+        showToast('Welcome back, ' + currentUsername + '!', 'green');
+        updateUserBtn();
+        await loadBookmarks();
+      }).catch(e => { errEl.textContent = e.message; });
+  }
+}
+
+function signOutUser(){
+  auth.signOut().then(()=>{
+    currentUser=null; currentUsername=''; bookmarks=[];
+    updateUserBtn(); refreshAllHomepages(); showToast('Signed out');
+  });
+}
+
+function updateUserBtn(){
+  const btn=document.getElementById('userBtn');
+  if(currentUser && currentUsername){ 
+    btn.textContent='👤 ' + currentUsername.substring(0,14);
+    btn.onclick=signOutUser;
+  } else if(currentUser){
+    btn.textContent='👤 ' + (currentUser.email||'').substring(0,14);
+    btn.onclick=signOutUser;
+  } else {
+    btn.textContent='👤 Sign In';
+    btn.onclick=openLoginModal;
+  }
+}
+
+function toggleTheme(){ const b=document.body; const t=b.getAttribute('data-theme')==='dark'?'light':'dark'; b.setAttribute('data-theme',t); localStorage.setItem('gz_theme',t); }
+
+// ── INIT ──
+function init() {
+  const savedTheme=localStorage.getItem('gz_theme');
+  if(savedTheme) document.body.setAttribute('data-theme',savedTheme);
+
+  document.getElementById('backBtn').onclick=goBack;
+  document.getElementById('forwardBtn').onclick=goForward;
+  document.getElementById('refreshBtn').onclick=refreshPage;
+  document.getElementById('homeBtn').onclick=goHome;
+  document.getElementById('createBtn').onclick=openBuilder;
+  document.getElementById('themeBtn').onclick=toggleTheme;
+  document.getElementById('previewBtn').onclick=previewSite;
+  document.getElementById('publishBtn').onclick=publishSite;
+  document.getElementById('closeBuilderBtn').onclick=closeBuilderPanel;
+  document.getElementById('undoBtn').onclick=undoBuilder;
+  document.getElementById('redoBtn').onclick=redoBuilder;
+  document.getElementById('submitAuthBtn').onclick=handleAuth;
+  document.getElementById('toggleAuthBtn').onclick=toggleAuthMode;
+  document.getElementById('applyPageStyleBtn').onclick=applyPageStyle;
+  document.getElementById('clearCanvasBtn').onclick=()=>{
+    if(confirm('Clear all elements?')){
+      document.getElementById('builderCanvas').innerHTML='<div id="canvasPlaceholder" style="text-align:center;padding:60px;color:#aaa;">✨ Canvas cleared. Add elements!</div>';
+      saveBuilderHistory(); showToast('Canvas cleared');
+    }
+  };
+  document.querySelectorAll('.element-btn[data-type]').forEach(btn=>btn.addEventListener('click',()=>addElement(btn.dataset.type)));
+  document.querySelectorAll('.element-btn[data-layout]').forEach(btn=>btn.addEventListener('click',()=>addLayout(btn.dataset.layout)));
+
+  document.addEventListener('keydown', e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==='t'){e.preventDefault();createTab();}
+    if((e.ctrlKey||e.metaKey)&&e.key==='w'){e.preventDefault();if(activeTabId)closeTab(activeTabId);}
+    if((e.ctrlKey||e.metaKey)&&e.key==='l'){e.preventDefault();document.getElementById('urlBar').focus();document.getElementById('urlBar').select();}
+  });
+
+  startSitesListener();
+
+  auth.onAuthStateChanged(async user=>{
+    currentUser=user;
+    if(user){
+      currentUsername = await getUsernameFromFirestore(user.uid);
+      if(!currentUsername) currentUsername = user.email.split('@')[0];
+    } else {
+      currentUsername = '';
+    }
+    updateUserBtn();
+    if(user){ await loadBookmarks(); }
+    else { bookmarks=[]; refreshAllHomepages(); }
+  });
+
+  createTab();
+}
+
+init();
+</script>
+</body>
+</html>
