@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G-Browser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #111;
+            font-family: 'Segoe UI', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .browser-header {
+            background: #1c1c1c;
+            padding: 8px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+        
+        .browser-url {
+            flex: 1;
+            padding: 8px 12px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 4px;
+            outline: none;
+        }
+        
+        .go-btn {
+            background: #7289da;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .go-btn:hover {
+            background: #5b6eae;
+        }
+        
+        .favorites-bar {
+            background: #111;
+            padding: 6px 10px;
+            border-bottom: 1px solid #222;
+            display: flex;
+            gap: 15px;
+            font-size: 11px;
+        }
+        
+        .favorites-bar span {
+            color: #888;
+        }
+        
+        .favorites-bar a {
+            color: #2ecc71;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        .favorites-bar a:hover {
+            text-decoration: underline;
+        }
+        
+        .warning-bar {
+            background: #333;
+            color: #aaa;
+            padding: 4px 10px;
+            font-size: 10px;
+            text-align: center;
+        }
+        
+        iframe {
+            flex: 1;
+            border: none;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="browser-header">
+        <input type="text" class="browser-url" id="browserUrl" placeholder="Type a site or search..." onkeypress="if(event.key==='Enter') loadBrowser()">
+        <button class="go-btn" onclick="loadBrowser()">GO</button>
+    </div>
+    <div class="favorites-bar">
+        <span>Favorites:</span>
+        <a onclick="browserLoad('https://scratch.mit.edu')">Scratch</a>
+        <a onclick="browserLoad('https://www.coolmathgames.com')">CoolMath</a>
+        <a onclick="browserLoad('https://www.chess.com')">Chess</a>
+        <a onclick="browserLoad('https://ncase.me/')">NCase</a>
+    </div>
+    <div class="warning-bar">⚠️ Some sites block embedding. They'll open in a new tab instead.</div>
+    <iframe id="browserFrame" src="about:blank"></iframe>
+
+    <script>
+        function browserLoad(url) {
+            document.getElementById('browserUrl').value = url;
+            document.getElementById('browserFrame').src = url;
+        }
+
+        function loadBrowser() {
+            let input = document.getElementById('browserUrl').value.trim();
+            if (!input) return;
+            
+            if (!input.includes('.') || input.includes(' ')) {
+                input = 'https://www.bing.com/search?q=' + encodeURIComponent(input) + '&adlt=strict';
+            } else {
+                if (!input.startsWith('http')) input = 'https://' + input;
+            }
+            
+            const blocked = ['google.com', 'youtube.com', 'roblox.com', 'twitter.com', 'instagram.com', 'facebook.com'];
+            if (blocked.some(b => input.includes(b))) {
+                window.open(input, '_blank');
+                return;
+            }
+            
+            document.getElementById('browserFrame').src = input;
+        }
+    </script>
+</body>
+</html>
