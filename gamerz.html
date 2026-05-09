@@ -136,6 +136,53 @@ iframe.web-frame { width:100%; flex:1; border:none; background:#fff; }
 .toast.show { opacity:1; transform:translateY(0); }
 .toast.green { background:var(--success); }
 .toast.red { background:var(--danger); }
+
+/* Import HTML Modal */
+.import-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 4000;
+}
+.import-modal.open {
+    display: flex;
+}
+.import-modal-content {
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 24px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+.import-modal-content h3 {
+    margin-bottom: 16px;
+}
+.import-textarea {
+    width: 100%;
+    height: 300px;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 13px;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    resize: vertical;
+}
+.import-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    justify-content: flex-end;
+}
 </style>
 </head>
 <body data-theme="light">
@@ -189,6 +236,7 @@ iframe.web-frame { width:100%; flex:1; border:none; background:#fff; }
       <button class="element-btn" data-type="hero">⭐ Hero Section</button>
       <button class="element-btn" data-type="navbar">🔗 Navbar</button>
       <button class="element-btn" data-type="footer">📄 Footer</button>
+      <button class="element-btn" id="importHtmlBtn">📥 Import HTML</button>
       <div class="sidebar-title">📐 Layouts</div>
       <button class="element-btn" data-layout="2col">▯▯ 2 Columns</button>
       <button class="element-btn" data-layout="3col">▯▯▯ 3 Columns</button>
@@ -206,6 +254,19 @@ iframe.web-frame { width:100%; flex:1; border:none; background:#fff; }
     <div class="builder-props" id="propsPanel">
       <div class="sidebar-title">⚙ Properties</div>
       <div id="propsContent"><p style="font-size:12px;color:var(--text-secondary);">Click an element to edit its properties.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- Import HTML Modal -->
+<div class="import-modal" id="importModal">
+  <div class="import-modal-content">
+    <h3>📥 Import HTML Code</h3>
+    <p style="font-size:12px; margin-bottom:12px; color:var(--text-secondary);">Paste your HTML code below. It will be added as editable elements to your canvas.</p>
+    <textarea class="import-textarea" id="importHtmlTextarea" placeholder="<div><h1>My Awesome Content</h1><p>Paste any HTML here...</p></div>"></textarea>
+    <div class="import-buttons">
+      <button class="action-btn grey" id="cancelImportBtn">Cancel</button>
+      <button class="action-btn green" id="confirmImportBtn">Import to Canvas</button>
     </div>
   </div>
 </div>
@@ -594,12 +655,10 @@ function goHome(){
 }
 
 // ── BUILDER ──
-// FIXED: openBuilder - completely resets canvas and history
 function openBuilder() {
   document.getElementById('builderPanel').classList.add('open');
   document.getElementById('builderPanel').dataset.editingId='';
   
-  // COMPLETELY WIPE the canvas - no remnants
   const canvas = document.getElementById('builderCanvas');
   canvas.innerHTML = '<div id="canvasPlaceholder" style="text-align:center;padding:60px;color:#aaa;">✨ Click elements on the left to start building!</div>';
   
@@ -610,7 +669,6 @@ function openBuilder() {
   document.getElementById('pageAccentColor').value='#4285f4';
   document.getElementById('builderCanvas').style.cssText='background:#fff;color:#1a1a1a;';
   
-  // Reset history completely
   builderHistory = []; 
   builderHistIdx = -1; 
   saveBuilderHistory();
@@ -620,7 +678,6 @@ function openBuilder() {
 }
 function closeBuilderPanel(){ document.getElementById('builderPanel').classList.remove('open'); }
 
-// FIXED: editSite - completely clears canvas and loads fresh WITHOUT duplication
 function editSite(siteId) {
   const site = websites.find(s=>s.id===siteId);
   if(!site){ showToast('Site not found','red'); return; }
@@ -631,11 +688,9 @@ function editSite(siteId) {
   document.getElementById('siteName').value=site.name;
   document.getElementById('siteId').value=site.id;
   
-  // COMPLETELY WIPE the canvas - remove everything
   const canvas=document.getElementById('builderCanvas');
   canvas.innerHTML = '';
   
-  // Parse the saved HTML
   const parser = new DOMParser();
   const doc = parser.parseFromString(site.html, 'text/html');
   const children = Array.from(doc.body.children);
@@ -643,15 +698,12 @@ function editSite(siteId) {
   if(!children.length){
     canvas.innerHTML='<div id="canvasPlaceholder" style="text-align:center;padding:60px;color:#aaa;">✨ Empty site. Add elements!</div>';
   } else {
-    // Add each element WITHOUT the toolbar wrapper (they will get events attached)
     children.forEach(child => {
-      // Clone the element so we don't modify the original
       const cloneElem = child.cloneNode(true);
       cloneElem.classList.add('editable-element');
       cloneElem.setAttribute('data-type', 'raw');
       cloneElem.style.cssText = 'padding:10px;margin:6px 0;position:relative;';
       
-      // Add the toolbar
       const tb = document.createElement('div');
       tb.className = 'elem-toolbar';
       tb.innerHTML = `<button class="elem-tb-btn" onclick="moveElem(this,'up')">↑</button><button class="elem-tb-btn" onclick="moveElem(this,'down')">↓</button><button class="elem-tb-btn" onclick="dupElem(this)">⧉</button><button class="elem-tb-btn" onclick="delElem(this)">✕</button>`;
@@ -662,7 +714,6 @@ function editSite(siteId) {
     });
   }
   
-  // Reset history to avoid old state
   builderHistory = []; 
   builderHistIdx = -1; 
   saveBuilderHistory();
@@ -673,7 +724,6 @@ function editSite(siteId) {
 
 function saveBuilderHistory(){
   const c=document.getElementById('builderCanvas');
-  // Trim history to avoid memory bloat
   builderHistory = builderHistory.slice(0, builderHistIdx + 1);
   builderHistory.push(c.innerHTML); 
   builderHistIdx++;
@@ -809,7 +859,6 @@ function getBuilderHTML() {
 
 function previewSite(){ const html=getBuilderHTML(); const w=window.open('','_blank'); w.document.write(html); w.document.close(); }
 
-// FIXED: publishSite - properly saves without duplication
 async function publishSite() {
   if(!currentUser){ showToast('Sign in to publish!','red'); openModal('loginModal'); return; }
   const name=document.getElementById('siteName').value.trim();
@@ -840,6 +889,59 @@ async function publishSite() {
     showToast(`Published "${name}" at /${id}`,'green');
     waitForSiteAndLoad(id);
   } catch(e){ showToast('Error publishing: '+e.message,'red'); }
+}
+
+// ========== IMPORT HTML FUNCTIONS ==========
+function showImportModal() {
+  document.getElementById('importModal').classList.add('open');
+}
+
+function closeImportModal() {
+  document.getElementById('importModal').classList.remove('open');
+  document.getElementById('importHtmlTextarea').value = '';
+}
+
+function importHtmlToCanvas() {
+  const htmlCode = document.getElementById('importHtmlTextarea').value;
+  if (!htmlCode.trim()) {
+    showToast('Please paste some HTML code first!', 'red');
+    return;
+  }
+  
+  removePlaceholder();
+  
+  const canvas = document.getElementById('builderCanvas');
+  
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlCode, 'text/html');
+  const bodyChildren = Array.from(doc.body.children);
+  
+  if (bodyChildren.length === 0) {
+    showToast('No valid HTML elements found!', 'red');
+    return;
+  }
+  
+  bodyChildren.forEach(child => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'editable-element';
+    wrapper.dataset.type = 'imported';
+    wrapper.style.cssText = 'padding:10px;margin:6px 0;position:relative;';
+    
+    const tb = document.createElement('div');
+    tb.className = 'elem-toolbar';
+    tb.innerHTML = `<button class="elem-tb-btn" onclick="moveElem(this,'up')">↑</button><button class="elem-tb-btn" onclick="moveElem(this,'down')">↓</button><button class="elem-tb-btn" onclick="dupElem(this)">⧉</button><button class="elem-tb-btn" onclick="delElem(this)">✕</button>`;
+    
+    const cloneElem = child.cloneNode(true);
+    wrapper.appendChild(tb);
+    wrapper.appendChild(cloneElem);
+    
+    canvas.appendChild(wrapper);
+    attachElemEvents(wrapper);
+  });
+  
+  saveBuilderHistory();
+  closeImportModal();
+  showToast(`Imported ${bodyChildren.length} element(s) successfully!`, 'green');
 }
 
 // ── AUTH WITH USERNAME ──
@@ -950,6 +1052,12 @@ function init() {
       saveBuilderHistory(); showToast('Canvas cleared');
     }
   };
+  
+  // Import HTML event listeners
+  document.getElementById('importHtmlBtn').onclick = showImportModal;
+  document.getElementById('cancelImportBtn').onclick = closeImportModal;
+  document.getElementById('confirmImportBtn').onclick = importHtmlToCanvas;
+  
   document.querySelectorAll('.element-btn[data-type]').forEach(btn=>btn.addEventListener('click',()=>addElement(btn.dataset.type)));
   document.querySelectorAll('.element-btn[data-layout]').forEach(btn=>btn.addEventListener('click',()=>addLayout(btn.dataset.layout)));
 
