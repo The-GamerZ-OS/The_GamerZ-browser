@@ -137,6 +137,19 @@ iframe.web-frame { width:100%; flex:1; border:none; background:#fff; }
 .toast.green { background:var(--success); }
 .toast.red { background:var(--danger); }
 
+/* Make sure buttons inside editable elements are clickable */
+.editable-element button,
+.editable-element a,
+.editable-element [onclick] {
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 5;
+}
+
+.editable-element .elem-toolbar {
+    z-index: 10;
+}
+
 /* Import HTML Modal */
 .import-modal {
     position: fixed;
@@ -262,7 +275,7 @@ iframe.web-frame { width:100%; flex:1; border:none; background:#fff; }
 <div class="import-modal" id="importModal">
   <div class="import-modal-content">
     <h3>📥 Import HTML Code</h3>
-    <p style="font-size:12px; margin-bottom:12px; color:var(--text-secondary);">Paste your HTML code below. It will be added as editable elements to your canvas.</p>
+    <p style="font-size:12px; margin-bottom:12px; color:var(--text-secondary);">Paste your HTML code below. It will be added as editable elements to your canvas. Buttons will be clickable!</p>
     <textarea class="import-textarea" id="importHtmlTextarea" placeholder="<div><h1>My Awesome Content</h1><p>Paste any HTML here...</p></div>"></textarea>
     <div class="import-buttons">
       <button class="action-btn grey" id="cancelImportBtn">Cancel</button>
@@ -932,6 +945,34 @@ function importHtmlToCanvas() {
     tb.innerHTML = `<button class="elem-tb-btn" onclick="moveElem(this,'up')">↑</button><button class="elem-tb-btn" onclick="moveElem(this,'down')">↓</button><button class="elem-tb-btn" onclick="dupElem(this)">⧉</button><button class="elem-tb-btn" onclick="delElem(this)">✕</button>`;
     
     const cloneElem = child.cloneNode(true);
+    
+    // Fix buttons to use alert instead of showToast
+    const buttons = cloneElem.querySelectorAll('button');
+    buttons.forEach(btn => {
+      // Remove any existing onclick that might reference showToast
+      btn.removeAttribute('onclick');
+      btn.style.cursor = 'pointer';
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        alert(`Button "${btn.textContent}" clicked! 🎉`);
+      });
+    });
+    
+    // Fix links
+    const links = cloneElem.querySelectorAll('a');
+    links.forEach(link => {
+      link.style.cursor = 'pointer';
+      link.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const href = link.getAttribute('href');
+        if (href && href !== '#') {
+          window.open(href, '_blank');
+        } else {
+          alert('Link clicked!');
+        }
+      });
+    });
+    
     wrapper.appendChild(tb);
     wrapper.appendChild(cloneElem);
     
@@ -941,7 +982,7 @@ function importHtmlToCanvas() {
   
   saveBuilderHistory();
   closeImportModal();
-  showToast(`Imported ${bodyChildren.length} element(s) successfully!`, 'green');
+  showToast(`Imported ${bodyChildren.length} element(s)! Buttons work!`, 'green');
 }
 
 // ── AUTH WITH USERNAME ──
