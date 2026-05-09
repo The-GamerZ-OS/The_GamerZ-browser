@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>G-Browser</title>
+    <title>Dual Boot Menu</title>
     <style>
         * {
             margin: 0;
@@ -12,124 +12,71 @@
         }
         
         body {
-            background: #111;
-            font-family: 'Segoe UI', sans-serif;
+            background: #000;
+            font-family: 'Courier New', monospace;
             height: 100vh;
             display: flex;
             flex-direction: column;
-        }
-        
-        .browser-header {
-            background: #1c1c1c;
-            padding: 8px;
-            display: flex;
-            gap: 8px;
             align-items: center;
-            border-bottom: 1px solid #333;
+            justify-content: center;
         }
         
-        .browser-url {
-            flex: 1;
-            padding: 8px 12px;
-            background: #333;
-            color: #fff;
-            border: 1px solid #444;
-            border-radius: 4px;
-            outline: none;
-        }
-        
-        .go-btn {
-            background: #7289da;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            cursor: pointer;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        
-        .go-btn:hover {
-            background: #5b6eae;
-        }
-        
-        .favorites-bar {
-            background: #111;
-            padding: 6px 10px;
-            border-bottom: 1px solid #222;
-            display: flex;
-            gap: 15px;
-            font-size: 11px;
-        }
-        
-        .favorites-bar span {
-            color: #888;
-        }
-        
-        .favorites-bar a {
-            color: #2ecc71;
-            cursor: pointer;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        
-        .favorites-bar a:hover {
-            text-decoration: underline;
-        }
-        
-        .warning-bar {
-            background: #333;
-            color: #aaa;
-            padding: 4px 10px;
-            font-size: 10px;
+        .boot-container {
             text-align: center;
         }
         
-        iframe {
-            flex: 1;
-            border: none;
-            width: 100%;
+        .boot-title {
+            color: #fff;
+            font-size: 28px;
+            font-weight: normal;
+            letter-spacing: 4px;
+            margin-bottom: 60px;
+            text-transform: uppercase;
+        }
+        
+        .boot-title::after {
+            content: "_";
+            animation: blink 1s step-end infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .boot-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .boot-btn {
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 14px 40px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 280px;
+            letter-spacing: 2px;
+        }
+        
+        .boot-btn:hover {
+            background: #fff;
+            color: #000;
         }
     </style>
 </head>
 <body>
-    <div class="browser-header">
-        <input type="text" class="browser-url" id="browserUrl" placeholder="Type a site or search..." onkeypress="if(event.key==='Enter') loadBrowser()">
-        <button class="go-btn" onclick="loadBrowser()">GO</button>
+    <div class="boot-container">
+        <div class="boot-title">DUAL BOOT MENU</div>
+        <div class="boot-buttons">
+            <button class="boot-btn" onclick="window.location.href='gamerz.html'">The_GamerZ Browser</button>
+            <button class="boot-btn" onclick="window.location.href='gbrowser.html'">GBrowser</button>
+        </div>
     </div>
-    <div class="favorites-bar">
-        <span>Favorites:</span>
-        <a onclick="browserLoad('https://scratch.mit.edu')">Scratch</a>
-        <a onclick="browserLoad('https://www.coolmathgames.com')">CoolMath</a>
-        <a onclick="browserLoad('https://www.chess.com')">Chess</a>
-        <a onclick="browserLoad('https://ncase.me/')">NCase</a>
-    </div>
-    <div class="warning-bar">⚠️ Some sites block embedding. They'll open in a new tab instead.</div>
-    <iframe id="browserFrame" src="about:blank"></iframe>
-
-    <script>
-        function browserLoad(url) {
-            document.getElementById('browserUrl').value = url;
-            document.getElementById('browserFrame').src = url;
-        }
-
-        function loadBrowser() {
-            let input = document.getElementById('browserUrl').value.trim();
-            if (!input) return;
-            
-            if (!input.includes('.') || input.includes(' ')) {
-                input = 'https://www.bing.com/search?q=' + encodeURIComponent(input) + '&adlt=strict';
-            } else {
-                if (!input.startsWith('http')) input = 'https://' + input;
-            }
-            
-            const blocked = ['google.com', 'youtube.com', 'roblox.com', 'twitter.com', 'instagram.com', 'facebook.com'];
-            if (blocked.some(b => input.includes(b))) {
-                window.open(input, '_blank');
-                return;
-            }
-            
-            document.getElementById('browserFrame').src = input;
-        }
-    </script>
 </body>
 </html>
